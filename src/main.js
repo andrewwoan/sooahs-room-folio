@@ -6,6 +6,7 @@ import * as THREE from "three";
 import { OrbitControls } from "./utils/OrbitControls.js";
 import { DRACOLoader } from "three/addons/loaders/DRACOLoader.js";
 import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
+import { HowlFactory } from "./infrastructure/audio/factories/HowlFactory.js";
 
 import smokeVertexShader from "./shaders/smoke/vertex.glsl";
 import smokeFragmentShader from "./shaders/smoke/fragment.glsl";
@@ -22,11 +23,11 @@ const PIANO_TIMEOUT = 2000;
 const BACKGROUND_MUSIC_VOLUME = 1;
 const FADED_VOLUME = 0;
 
-const backgroundMusic = new Howl({
-  src: ["/audio/music/cosmic_candy.ogg"],
-  loop: true,
-  volume: 1,
-});
+const src = ["/audio/music/cosmic_candy.ogg"];
+const loop = true;
+const volume = 1;
+const useHowl = new HowlFactory(); // No pasas argumentos al constructor
+const backgroundMusic = useHowl.create(src, loop, volume); // Pasas los argumentos a render()
 
 const fadeOutBackgroundMusic = () => {
   if (!isMuted && !isMusicFaded) {
