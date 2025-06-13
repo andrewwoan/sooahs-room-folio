@@ -1208,6 +1208,8 @@ let egg1, egg2, egg3;
 
 let frame1, frame2, frame3;
 
+const useOriginalMeshObjects = ["Bulb", "Cactus", "Kirby"];
+
 const objectsNeedingHitboxes = [];
 
 const objectsWithIntroAnimations = [
@@ -1477,11 +1479,15 @@ loader.load("/models/Room_Portfolio.glb", (glb) => {
 
           objectsNeedingHitboxes.push(child);
         } else {
-          // Create immediate hitboxes for meshes that DON'T have an intro animation
-          const hitbox = createStaticHitbox(child);
-          scene.add(hitbox);
-          raycasterObjects.push(hitbox);
-          hitboxToObjectMap.set(hitbox, child);
+          // Create immediate hitboxes/meshes for objects that DON'T have an intro animation
+          const raycastObject = createStaticHitbox(child);
+
+          if (raycastObject !== child) {
+            scene.add(raycastObject);
+          }
+
+          raycasterObjects.push(raycastObject);
+          hitboxToObjectMap.set(raycastObject, child);
         }
       }
     }
@@ -1515,7 +1521,38 @@ const pointer = new THREE.Vector2();
 
 const hitboxToObjectMap = new Map();
 
+function shouldUseOriginalMesh(objectName) {
+  return useOriginalMeshObjects.some((meshName) =>
+    objectName.includes(meshName)
+  );
+}
+
 function createStaticHitbox(originalObject) {
+  // Check if this object should use original mesh
+  if (shouldUseOriginalMesh(originalObject.name)) {
+    // Set up the original object for raycasting
+    if (!originalObject.userData.initialScale) {
+      originalObject.userData.initialScale = new THREE.Vector3().copy(
+        originalObject.scale
+      );
+    }
+    if (!originalObject.userData.initialPosition) {
+      originalObject.userData.initialPosition = new THREE.Vector3().copy(
+        originalObject.position
+      );
+    }
+    if (!originalObject.userData.initialRotation) {
+      originalObject.userData.initialRotation = new THREE.Euler().copy(
+        originalObject.rotation
+      );
+    }
+
+    // Return the original object to be used for raycasting
+    originalObject.userData.originalObject = originalObject;
+    return originalObject;
+  }
+
+  // Original hitbox creation code for other objects
   if (!originalObject.userData.initialScale) {
     originalObject.userData.initialScale = new THREE.Vector3().copy(
       originalObject.scale
@@ -1579,10 +1616,14 @@ function createStaticHitbox(originalObject) {
 
 function createDelayedHitboxes() {
   objectsNeedingHitboxes.forEach((child) => {
-    const hitbox = createStaticHitbox(child);
-    scene.add(hitbox);
-    raycasterObjects.push(hitbox);
-    hitboxToObjectMap.set(hitbox, child);
+    const raycastObject = createStaticHitbox(child);
+
+    if (raycastObject !== child) {
+      scene.add(raycastObject);
+    }
+
+    raycasterObjects.push(raycastObject);
+    hitboxToObjectMap.set(raycastObject, child);
   });
 
   objectsNeedingHitboxes.length = 0;
