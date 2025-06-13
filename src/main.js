@@ -1528,9 +1528,8 @@ function shouldUseOriginalMesh(objectName) {
 }
 
 function createStaticHitbox(originalObject) {
-  // Check if this object should use original mesh
+  // Check if we should use original mesh
   if (shouldUseOriginalMesh(originalObject.name)) {
-    // Set up the original object for raycasting
     if (!originalObject.userData.initialScale) {
       originalObject.userData.initialScale = new THREE.Vector3().copy(
         originalObject.scale
@@ -1547,12 +1546,10 @@ function createStaticHitbox(originalObject) {
       );
     }
 
-    // Return the original object to be used for raycasting
     originalObject.userData.originalObject = originalObject;
     return originalObject;
   }
 
-  // Original hitbox creation code for other objects
   if (!originalObject.userData.initialScale) {
     originalObject.userData.initialScale = new THREE.Vector3().copy(
       originalObject.scale
