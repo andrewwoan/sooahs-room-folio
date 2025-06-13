@@ -311,8 +311,6 @@ const manager = new THREE.LoadingManager();
 
 const loadingScreen = document.querySelector(".loading-screen");
 const loadingScreenButton = document.querySelector(".loading-screen-button");
-const desktopInstructions = document.querySelector(".desktop-instructions");
-const mobileInstructions = document.querySelector(".mobile-instructions");
 
 manager.onLoad = function () {
   loadingScreenButton.style.border = "8px solid #2a0f4e";
@@ -335,8 +333,6 @@ manager.onLoad = function () {
     loadingScreenButton.style.boxShadow = "none";
     loadingScreenButton.textContent = "~ 안녕하세요 ~";
     loadingScreen.style.background = "#ead7ef";
-    // desktopInstructions.style.color = "#6e5e9c";
-    // mobileInstructions.style.color = "#6e5e9c";
     isDisabled = true;
 
     toggleFavicons();
@@ -936,6 +932,11 @@ function playIntroAnimation() {
     defaults: {
       duration: 0.4,
       ease: "back.out(1.7)",
+      onComplete: () => {
+        setTimeout(() => {
+          createDelayedHitboxes();
+        }, 1950);
+      },
     },
   });
   pianoKeysTl.timeScale(1.2);
@@ -1207,6 +1208,76 @@ let egg1, egg2, egg3;
 
 let frame1, frame2, frame3;
 
+const objectsNeedingHitboxes = [];
+
+const objectsWithIntroAnimations = [
+  "Hanging_Plank_1",
+  "Hanging_Plank_2",
+  "My_Work_Button",
+  "About_Button",
+  "Contact_Button",
+  "Boba",
+  "GitHub",
+  "YouTube",
+  "Twitter",
+  "Name_Letter_1",
+  "Name_Letter_2",
+  "Name_Letter_3",
+  "Name_Letter_4",
+  "Name_Letter_5",
+  "Name_Letter_6",
+  "Name_Letter_7",
+  "Name_Letter_8",
+  "Flower_1",
+  "Flower_2",
+  "Flower_3",
+  "Flower_4",
+  "Flower_5",
+  "Box_1",
+  "Box_2",
+  "Box_3",
+  "Lamp",
+  "Slipper_1",
+  "Slipper_2",
+  "Fish_Fourth",
+  "Egg_1",
+  "Egg_2",
+  "Egg_3",
+  "Frame_1",
+  "Frame_2",
+  "Frame_3",
+  "C1_Key",
+  "C#1_Key",
+  "D1_Key",
+  "D#1_Key",
+  "E1_Key",
+  "F1_Key",
+  "F#1_Key",
+  "G1_Key",
+  "G#1_Key",
+  "A1_Key",
+  "A#1_Key",
+  "B1_Key",
+  "C2_Key",
+  "C#2_Key",
+  "D2_Key",
+  "D#2_Key",
+  "E2_Key",
+  "F2_Key",
+  "F#2_Key",
+  "G2_Key",
+  "G#2_Key",
+  "A2_Key",
+  "A#2_Key",
+  "B2_Key",
+];
+
+function hasIntroAnimation(objectName) {
+  return objectsWithIntroAnimations.some((animatedName) =>
+    objectName.includes(animatedName)
+  );
+}
+
 loader.load("/models/Room_Portfolio.glb", (glb) => {
   glb.scene.traverse((child) => {
     if (child.isMesh) {
@@ -1235,10 +1306,6 @@ loader.load("/models/Room_Portfolio.glb", (glb) => {
 
       if (child.name.includes("Coffee")) {
         coffeePosition = child.position.clone();
-      }
-
-      if (child.name.includes("Raycaster")) {
-        raycasterObjects.push(child);
       }
 
       if (child.name.includes("Hover") || child.name.includes("Key")) {
@@ -1401,6 +1468,22 @@ loader.load("/models/Room_Portfolio.glb", (glb) => {
           }
         });
       }
+
+      if (child.name.includes("Raycaster")) {
+        if (hasIntroAnimation(child.name)) {
+          // Create a hitbox for object after intro is done playing,
+          // Set an original scale first for the hitbox
+          child.userData.originalScale = new THREE.Vector3(1, 1, 1);
+
+          objectsNeedingHitboxes.push(child);
+        } else {
+          // Create immediate hitboxes for meshes that DON'T have an intro animation
+          const hitbox = createStaticHitbox(child);
+          scene.add(hitbox);
+          raycasterObjects.push(hitbox);
+          hitboxToObjectMap.set(hitbox, child);
+        }
+      }
     }
   });
 
@@ -1430,9 +1513,85 @@ const socialLinks = {
 const raycaster = new THREE.Raycaster();
 const pointer = new THREE.Vector2();
 
+const hitboxToObjectMap = new Map();
+
+function createStaticHitbox(originalObject) {
+  if (!originalObject.userData.initialScale) {
+    originalObject.userData.initialScale = new THREE.Vector3().copy(
+      originalObject.scale
+    );
+  }
+  if (!originalObject.userData.initialPosition) {
+    originalObject.userData.initialPosition = new THREE.Vector3().copy(
+      originalObject.position
+    );
+  }
+  if (!originalObject.userData.initialRotation) {
+    originalObject.userData.initialRotation = new THREE.Euler().copy(
+      originalObject.rotation
+    );
+  }
+
+  const currentScale = originalObject.scale.clone();
+  const hasZeroScale =
+    currentScale.x === 0 || currentScale.y === 0 || currentScale.z === 0;
+
+  if (hasZeroScale && originalObject.userData.originalScale) {
+    originalObject.scale.copy(originalObject.userData.originalScale);
+  }
+
+  const box = new THREE.Box3().setFromObject(originalObject);
+  const size = box.getSize(new THREE.Vector3());
+  const center = box.getCenter(new THREE.Vector3());
+
+  if (hasZeroScale) {
+    originalObject.scale.copy(currentScale);
+  }
+
+  let hitboxGeometry;
+  let sizeMultiplier = { x: 1.1, y: 1.75, z: 1.1 };
+
+  hitboxGeometry = new THREE.BoxGeometry(
+    size.x * sizeMultiplier.x,
+    size.y * sizeMultiplier.y,
+    size.z * sizeMultiplier.z
+  );
+
+  const hitboxMaterial = new THREE.MeshBasicMaterial({
+    transparent: true,
+    opacity: 0,
+    visible: false,
+  });
+
+  const hitbox = new THREE.Mesh(hitboxGeometry, hitboxMaterial);
+  hitbox.position.copy(center);
+  hitbox.name = originalObject.name + "_Hitbox";
+  hitbox.userData.originalObject = originalObject;
+
+  if (originalObject.name.includes("Headphones")) {
+    hitbox.rotation.x = 0;
+    hitbox.rotation.y = Math.PI / 4;
+    hitbox.rotation.z = 0;
+  }
+
+  return hitbox;
+}
+
+function createDelayedHitboxes() {
+  objectsNeedingHitboxes.forEach((child) => {
+    const hitbox = createStaticHitbox(child);
+    scene.add(hitbox);
+    raycasterObjects.push(hitbox);
+    hitboxToObjectMap.set(hitbox, child);
+  });
+
+  objectsNeedingHitboxes.length = 0;
+}
+
 function handleRaycasterInteraction() {
   if (currentIntersects.length > 0) {
-    const object = currentIntersects[0].object;
+    const hitbox = currentIntersects[0].object;
+    const object = hitboxToObjectMap.get(hitbox);
 
     if (object.name.includes("Button")) {
       buttonSounds.click.play();
@@ -1487,8 +1646,9 @@ function handleRaycasterInteraction() {
   }
 }
 
-function playHoverAnimation(object, isHovering) {
+function playHoverAnimation(objectHitbox, isHovering) {
   let scale = 1.4;
+  const object = hitboxToObjectMap.get(objectHitbox);
   gsap.killTweensOf(object.scale);
   gsap.killTweensOf(object.rotation);
   gsap.killTweensOf(object.position);
@@ -1866,8 +2026,8 @@ const render = (timestamp) => {
             playHoverAnimation(currentHoveredObject, false);
           }
 
-          playHoverAnimation(currentIntersectObject, true);
           currentHoveredObject = currentIntersectObject;
+          playHoverAnimation(currentIntersectObject, true);
         }
       }
 
