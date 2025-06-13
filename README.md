@@ -13,9 +13,9 @@ npm install
 npm run dev
 ```
 
-# Updates!!!
+# Updates & Known Issues!!!
 
-- None so far other than reformatting
+- There is an issue where, at certain angles, when you hover something it starts "vibrating" or "twitching," this is because the mesh that we're using to target with our raycaster is no longer being hovered, triggering the tween to be "killed." If you wanted to fix this with minimal adjustments, you can generate static invisible hitboxes for all hovered items that are passed into the raycaster for testing rather than the object itself. Alternatively if you don't want a hovered state, you can simply remove the kill check and let it play out it's animation fully.
 
 # Inspo & Credits!!!
 
