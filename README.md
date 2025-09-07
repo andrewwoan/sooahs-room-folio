@@ -38,3 +38,19 @@ npm run dev
 
 - [Awwwards](https://www.awwwards.com/sites/suas-room-folio)
 - [CSSDA](https://www.cssdesignawards.com/sites/sooahs-room-folio/47040/)
+
+# 📖 Detailed Documentation for Getting Started
+
+For a comprehensive guide on how to initialize your digital project, including the identification of key files and the steps to launch it, please refer to the Detailed Manual for Starting Digital Projects. This manual has been especially created to help you get started!
+
+# English Documentation
+| Docs| Link | Date |
+|--|--|--|
+| Guide Start Up        |[**English Version**](./docs/guide_start_up_en.md)     | 2025-04-28 | 
+| Basic git guide       |[**English Version**](./docs/basic_git_guide.md)       | 2025-04-29 | 
+
+# Documentación en Español
+| Docs| Link | Date |
+|--|--|--|
+| Guía de inicio rápida |[**Versión en Español**](./docs/guide_start_up_es.md)  | 2025-04-28 | 
+| Guía básica de git    |[**Versión en Español**](./docs/guia_basica_de_git.md) | 2025-04-29 | 
